@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>五子棋</title>
+  </head>
+  <body>
+    <div>
+      <div
+        id="gobang-content"
+        style="margin: 0 12px 12px; background: antiquewhite"
+      ></div>
+    </div>
+    <script>
+      const PIECE_COLOR = {
+        red: "red",
+        blue: "blue",
+      };
+
+      const GobangArr = Array.from({ length: 36 }, (_, i) => i).map(
+        (_val, index) => {
+          return Array.from({ length: 36 }, (_, i) => i).map((_v, idx) => {
+            return {
+              backgroundColor: undefined,
+              x: index,
+              y: idx,
+            };
+          });
+        }
+      );
+      let isUser = GobangArr;
+      let color = PIECE_COLOR.red;
+
+      // 数组中是否有 n 个连续数据相同
+      function isConsecutiveSame(arr, n) {
+        if (arr.length < n) {
+          return false;
+        }
+
+        for (let i = 0; i <= arr.length - n; i++) {
+          const subArray = arr.slice(i, i + n);
+          if (
+            subArray.every(
+              (value) =>
+                value?.backgroundColor &&
+                value?.backgroundColor === subArray?.[0]?.backgroundColor
+            )
+          ) {
+            alert(
+              `${
+                subArray?.[0]?.backgroundColor === PIECE_COLOR.blue
+                  ? "白子"
+                  : "黑子"
+              }赢了`
+            );
+            isUser = GobangArr;
+
+            const row = element.getElementsByClassName("board-row-item");
+            isUser.forEach((Gobang, index) => {
+              const gobangs = row[index]?.children;
+              const column =
+                row[index].getElementsByClassName("board-column-item");
+              for (let i = 0; i < gobangs.length; i++) {
+                if (i === 0 && index === 0) {
+                  column[
+                    i
+                  ].style.backgroundImage = `url('svg/bgRadiusItem.svg')`;
+                } else if (i === 0 && index === isUser?.length - 1) {
+                  column[
+                    i
+                  ].style.backgroundImage = `url('svg/bgRadiusItem.svg')`;
+                  column[i].style.transform = "rotate(270deg)";
+                } else if (index === 0 && i === Gobang?.length - 1) {
+                  column[
+                    i
+                  ].style.backgroundImage = `url('svg/bgRadiusItem.svg')`;
+                  column[i].style.transform = "rotate(90deg)";
+                } else if (
+                  index === isUser?.length - 1 &&
+                  i === Gobang?.length - 1
+                ) {
+                  column[
+                    i
+                  ].style.backgroundImage = `url('svg/bgRadiusItem.svg')`;
+                  column[i].style.transform = "rotate(180deg)";
+                } else if (i === 0) {
+                  column[
+                    i
+                  ].style.backgroundImage = `url('svg/bgBorderItem.svg')`;
+                } else if (index === 0) {
+                  column[
+                    i
+                  ].style.backgroundImage = `url('svg/bgBorderItem.svg')`;
+                  column[i].style.transform = "rotate(90deg)";
+                } else if (index === isUser?.length - 1) {
+                  column[
+                    i
+                  ].style.backgroundImage = `url('svg/bgBorderItem.svg')`;
+                  column[i].style.transform = "rotate(270deg)";
+                } else if (i === Gobang?.length - 1) {
+                  column[
+                    i
+                  ].style.backgroundImage = `url('svg/bgBorderItem.svg')`;
+                  column[i].style.transform = "rotate(180deg)";
+                } else {
+                  column[i].style.backgroundImage = `url('svg/bgItem.svg')`;
+                }
+              }
+            });
+
+            return true;
+          }
+        }
+        return false;
+      }
+
+      // 落子事件
+      const pieceClick = (value, index, itemIndex) => {
+        const arr = isUser.map((Gobang, inde) => {
+          if (inde === index) {
+            return Gobang.map((go, id) => {
+              if (id === itemIndex) {
+                return {
+                  ...go,
+                  backgroundColor: color,
+                  backgroundImage: undefined,
+                };
+              }
+              return go;
+            });
+          }
+          return Gobang;
+        });
+        const row = element.getElementsByClassName("board-row-item");
+
+        const gobangs = row[index]?.children;
+        const column = row[index].getElementsByClassName("board-column-item");
+
+        if (
+          !['url("svg/blackItem.svg")', 'url("svg/whiteItem.svg")']?.includes(
+            column[itemIndex].style.backgroundImage
+          )
+        ) {
+          isUser = arr;
+          updateBoard();
+          color =
+            color === PIECE_COLOR.red ? PIECE_COLOR.blue : PIECE_COLOR.red;
+
+          // 横排
+          let rowFlag = false;
+          arr.forEach((isUse) => {
+            if (isConsecutiveSame(isUse, 5)) {
+              rowFlag = true;
+            }
+          });
+          if (rowFlag) return;
+
+          // 竖排
+          let colFlag = false;
+
+          // 二维数组竖向排列
+          const sortedArray = arr.map((_, i) => arr.map((row) => row[i]));
+
+          sortedArray.forEach((isUse) => {
+            if (isConsecutiveSame(isUse, 5)) {
+              colFlag = true;
+            }
+          });
+          if (colFlag) return;
+
+          // 左下到右上斜对角
+          const isRightTop = (list, x, y) => list?.[x - 1]?.[y + 1];
+          function convertToDiagonalArray(arr) {
+            const result = [];
+            for (let i = 0; i < arr?.length; i++) {
+              const iArr = arr[i];
+              const rightTopValue = [iArr[0]];
+              const rightTopFn = (list, x, y) => {
+                if (isRightTop(list, x, y)) {
+                  rightTopValue.push(isRightTop(list, x, y));
+                  if (isRightTop(list, x - 1, y + 1)) {
+                    rightTopFn(list, x - 1, y + 1);
+                  }
+                }
+              };
+              rightTopFn(arr, i, 0);
+              result.push(rightTopValue);
+            }
+            for (let i = 0; i < arr?.length - 1; i++) {
+              const iArr = arr[arr?.length - 1];
+              const rightTopValue = [iArr[i + 1]];
+              const rightTopFn = (list, x, y) => {
+                if (isRightTop(list, x, y)) {
+                  rightTopValue.push(isRightTop(list, x, y));
+                  if (isRightTop(list, x - 1, y + 1)) {
+                    rightTopFn(list, x - 1, y + 1);
+                  }
+                }
+              };
+              rightTopFn(arr, arr?.length - 1, i + 1);
+              result.push(rightTopValue);
+            }
+            return result;
+          }
+          const output = convertToDiagonalArray(arr);
+          let rightTopFlag = false;
+          output.forEach((isUse) => {
+            if (isConsecutiveSame(isUse, 5)) {
+              rightTopFlag = true;
+            }
+          });
+          if (rightTopFlag) return;
+
+          // 左上到右下斜对角
+          const isRightButtom = (list, x, y) => list?.[x + 1]?.[y + 1];
+          function toRightButtomFn(arr) {
+            const result = [];
+            for (let i = 0; i < arr?.length; i++) {
+              const iArr = arr[i];
+              const rightTopValue = [iArr[0]];
+              const rightButtomFn = (list, x, y) => {
+                if (isRightButtom(list, x, y)) {
+                  rightTopValue.push(isRightButtom(list, x, y));
+                  if (isRightButtom(list, x + 1, y + 1)) {
+                    rightButtomFn(list, x + 1, y + 1);
+                  }
+                }
+              };
+              rightButtomFn(arr, i, 0);
+              result.push(rightTopValue);
+            }
+            for (let i = 0; i < arr?.length - 1; i++) {
+              const iArr = arr[0];
+              const rightTopValue = [iArr[i + 1]];
+              const rightButtomFn = (list, x, y) => {
+                if (isRightButtom(list, x, y)) {
+                  rightTopValue.push(isRightButtom(list, x, y));
+                  if (isRightButtom(list, x + 1, y + 1)) {
+                    rightButtomFn(list, x + 1, y + 1);
+                  }
+                }
+              };
+              rightButtomFn(arr, 0, i + 1);
+              result.push(rightTopValue);
+            }
+            return result;
+          }
+          const RightButtomValue = toRightButtomFn(arr);
+          let rightButtomFlag = false;
+          RightButtomValue.forEach((isUse) => {
+            if (isConsecutiveSame(isUse, 5)) {
+              rightButtomFlag = true;
+            }
+          });
+          if (rightButtomFlag) return;
+        }
+      };
+
+      // 创建一个新的div元素
+      const element = document.getElementById("gobang-content");
+      isUser.forEach((Gobang, index) => {
+        const gobangElement = document.createElement("div");
+        gobangElement.classList.add("board-row-item");
+        gobangElement.style.display = "flex";
+        element.appendChild(gobangElement);
+
+        Gobang.forEach((go, idx) => {
+          const background = () => {
+            if (idx === 0 && index === 0) {
+              return {
+                backgroundImage: `url('svg/bgRadiusItem.svg')`,
+              };
+            } else if (idx === 0 && index === isUser?.length - 1) {
+              return {
+                backgroundImage: `url('svg/bgRadiusItem.svg')`,
+                transform: "rotate(270deg)",
+              };
+            } else if (index === 0 && idx === Gobang?.length - 1) {
+              return {
+                backgroundImage: `url('svg/bgRadiusItem.svg')`,
+                transform: "rotate(90deg)",
+              };
+            } else if (
+              index === isUser?.length - 1 &&
+              idx === Gobang?.length - 1
+            ) {
+              return {
+                backgroundImage: `url('svg/bgRadiusItem.svg')`,
+                transform: "rotate(180deg)",
+              };
+            } else if (idx === 0) {
+              return {
+                backgroundImage: `url('svg/bgBorderItem.svg')`,
+              };
+            } else if (index === 0) {
+              return {
+                backgroundImage: `url('svg/bgBorderItem.svg')`,
+                transform: "rotate(90deg)",
+              };
+            } else if (index === isUser?.length - 1) {
+              return {
+                backgroundImage: `url('svg/bgBorderItem.svg')`,
+                transform: "rotate(270deg)",
+              };
+            } else if (idx === Gobang?.length - 1) {
+              return {
+                backgroundImage: `url('svg/bgBorderItem.svg')`,
+                transform: "rotate(180deg)",
+              };
+            }
+            return {
+              backgroundImage: `url('svg/bgItem.svg')`,
+            };
+          };
+          const style = background();
+          const goElement = document.createElement("div");
+          goElement.classList.add("board-column-item");
+          goElement.style.backgroundImage =
+            go?.backgroundColor === PIECE_COLOR.blue
+              ? `url('svg/whiteItem.svg')`
+              : go?.backgroundColor === PIECE_COLOR.red
+              ? `url('svg/blackItem.svg')`
+              : style?.backgroundImage;
+          goElement.style.transform = style?.transform;
+          goElement.style.width = "20px";
+          goElement.style.height = "20px";
+          goElement.style.borderRadius = "50% 50%";
+
+          goElement.addEventListener("click", (value) => {
+            pieceClick(go, index, idx);
+          });
+          gobangElement.appendChild(goElement);
+        });
+      });
+
+      // 更新棋盘显示
+      function updateBoard() {
+        const row = element.getElementsByClassName("board-row-item");
+        isUser.forEach((Gobang, index) => {
+          const gobangs = row[index]?.children;
+          const column = row[index].getElementsByClassName("board-column-item");
+          for (let i = 0; i < gobangs.length; i++) {
+            column[i].style.backgroundImage = undefined;
+            if (Gobang[i].backgroundColor === PIECE_COLOR.red) {
+              column[i].style.backgroundImage = `url('svg/blackItem.svg')`;
+            } else if (Gobang[i].backgroundColor === PIECE_COLOR.blue) {
+              column[i].style.backgroundImage = `url('svg/whiteItem.svg')`;
+            }
+          }
+        });
+      }
+
+      // 初始化时更新一次棋盘（虽然此时棋盘为空）
+      updateBoard();
+    </script>
+  </body>
+</html>
